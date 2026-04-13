@@ -375,7 +375,7 @@ def main():
                                             player["lv"] += 1
                                             player["max_hp"] += 10
                                             player["atk"] += 1
-                                            player["hp"] = player["max_hp"]
+                                            player["hp"] = player["max_hp"] // 10
                                             battle_logs.append("等級提升！HP 已全滿！")
                                         battle_ended = True
                                     else:
