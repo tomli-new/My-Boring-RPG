@@ -1,0 +1,121 @@
+import pygame
+import sys
+import random
+
+# 初始化
+pygame.init()
+
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+pygame.display.set_caption("Bullet Rain Visualizer - Press 'X' to Quit")
+
+# 顏色定義
+C_RED, C_GREEN, C_BLUE = (255, 0, 0), (0, 255, 0), (0, 0, 255)
+C_PINK, C_WHITE, C_BLACK = (255, 192, 203), (255, 255, 255), (0, 0, 0)
+C_YELLOW, C_CYAN, C_PURPLE, C_ORANGE = (255, 255, 0), (0, 255, 255), (128, 0, 128), (255, 165, 0)
+
+# --- 子彈資料庫 (純視覺) ---
+BULLET_TYPES = {
+    "red":    (C_RED, 22, (8.0, 12.0)),
+    "orange": (C_ORANGE, 12, (10.0, 15.0)),
+    "blue":   (C_BLUE, 10, (3.0, 6.0)),
+    "green":  (C_GREEN, 14, (5.0, 9.0)),
+    "cyan":   (C_CYAN, 8, (7.0, 11.0)),
+    "purple": (C_PURPLE, 16, (4.0, 7.0)),
+    "yellow": (C_YELLOW, 12, (4.0, 8.0))
+}
+
+font_small = pygame.font.SysFont("Arial", 22)
+
+class Bullet:
+    def __init__(self, score, w, h):
+        # 隨機抽取子彈外觀
+        b_type = random.choice(list(BULLET_TYPES.keys()))
+        data = BULLET_TYPES[b_type]
+        
+        self.color, self.size = data[0], data[1]
+        self.base_speed = random.uniform(data[2][0], data[2][1])
+        self.speed = self.base_speed + (score // 100)
+
+        # 反彈邏輯
+        self.bounces_left = score // 1000
+
+        # 生成位置與方向向量
+        side = random.randint(0, 3)
+        if side == 0: self.x, self.y, self.vx, self.vy = random.randint(0, w), -20, random.uniform(-1, 1), 1
+        elif side == 1: self.x, self.y, self.vx, self.vy = random.randint(0, w), h + 20, random.uniform(-1, 1), -1
+        elif side == 2: self.x, self.y, self.vx, self.vy = -20, random.randint(0, h), 1, random.uniform(-1, 1)
+        else: self.x, self.y, self.vx, self.vy = w + 20, random.randint(0, h), -1, random.uniform(-1, 1)
+
+        self.rect = pygame.Rect(self.x, self.y, self.size, self.size)
+
+    def update(self, w, h):
+        self.x += self.vx * self.speed
+        self.y += self.vy * self.speed
+        self.rect.x, self.rect.y = self.x, self.y
+
+        # 反彈偵測
+        if self.bounces_left > 0:
+            if self.x <= 0 or self.x >= w - self.size:
+                self.vx *= -1
+                self.bounces_left -= 1
+            if self.y <= 0 or self.y >= h - self.size:
+                self.vy *= -1
+                self.bounces_left -= 1
+
+    def draw(self, surface):
+        pygame.draw.rect(surface, self.color, self.rect)
+
+def reset_animation():
+    return {
+        "score": 0, "bullets": [], "spawn_timer": 0
+    }
+
+def main():
+    global SCREEN_WIDTH, SCREEN_HEIGHT, screen
+    clock = pygame.time.Clock()
+    g = reset_animation()
+
+    while True:
+        screen.fill(C_BLACK)
+        
+        # 事件處理
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: 
+                pygame.quit(); sys.exit()
+            
+            if event.type == pygame.VIDEORESIZE:
+                SCREEN_WIDTH, SCREEN_HEIGHT = event.w, event.h
+                screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+            
+            # 按 X 離開動畫
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_x:
+                    pygame.quit(); sys.exit()
+
+        # 子彈生成
+        g["spawn_timer"] += 1
+        if g["spawn_timer"] > max(2, 10 - (g["score"] // 100)):
+            g["bullets"].append(Bullet(g["score"], SCREEN_WIDTH, SCREEN_HEIGHT))
+            g["spawn_timer"] = 0
+
+        # 更新與繪製子彈
+        for b in g["bullets"][:]:
+            b.update(SCREEN_WIDTH, SCREEN_HEIGHT)
+            b.draw(screen)
+            
+            # 超出邊界則移除並加分（用於增加難度/變化）
+            if b.x < -300 or b.x > SCREEN_WIDTH + 300 or b.y < -300 or b.y > SCREEN_HEIGHT + 300:
+                g["bullets"].remove(b)
+                g["score"] += 1
+
+        # UI 顯示
+        ui_text = f"Visual Score: {g['score']} | Bounce Lv: {g['score']//1000} | Press 'X' to Quit"
+        screen.blit(font_small.render(ui_text, True, C_WHITE), (20, 20))
+
+        pygame.display.flip()
+        clock.tick(60)
+
+if __name__ == "__main__":
+    main()
