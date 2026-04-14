@@ -68,7 +68,7 @@ def reset_animation():
         "score": 0, 
         "bullets": [], 
         "spawn_timer": 0,
-        "start_ticks": pygame.time.get_ticks()  # 記錄開始時的毫秒數
+        "start_ticks": pygame.time.get_ticks()
     }
 
 def main():
@@ -79,8 +79,12 @@ def main():
     while True:
         screen.fill(C_BLACK)
         
-        # 計算已過秒數
-        seconds = (pygame.time.get_ticks() - g["start_ticks"]) // 1000
+        # --- 計算 HH:MM:SS ---
+        total_seconds = (pygame.time.get_ticks() - g["start_ticks"]) // 1000
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+        time_string = f"{hours:02}:{minutes:02}:{seconds:02}"
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT: 
@@ -104,8 +108,8 @@ def main():
                 g["bullets"].remove(b)
                 g["score"] += 1
 
-        # 更新 UI：加入 Timer，移除 X 鍵提示
-        ui_text = f"Score: {g['score']} | Bounce Lv: {g['score']//1000} | Time: {seconds}s"
+        # 更新 UI：顯示格式化後的時間
+        ui_text = f"Score: {g['score']} | Bounce Lv: {g['score']//1000} | Time: {time_string}"
         screen.blit(font_small.render(ui_text, True, C_WHITE), (20, 20))
 
         pygame.display.flip()
