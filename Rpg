@@ -9,7 +9,7 @@ pygame.init()
 WIDTH = 1000
 HEIGHT = 600
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("RPG Core System - Fixed Inventory Logic")
+pygame.display.set_caption("RPG Core System - Regional Ambush Updated")
 
 # 顏色定義
 BLACK = (0, 0, 0)
@@ -35,42 +35,61 @@ title_font = get_font(28)
 
 # --- 數據庫 ---
 MONSTER_DB = {
-    "low": [
+    "新手村": [
         {"name": "史萊姆", "hp": 50, "max_hp": 50, "atk": 10, "lv": 1, "exp": 20},
+        {"name": "野兔", "hp": 30, "max_hp": 30, "atk": 5, "lv": 1, "exp": 10},
         {"name": "哥布林", "hp": 120, "max_hp": 120, "atk": 25, "lv": 5, "exp": 50}
     ],
-    "mid": [
-        {"name": "獸人", "hp": 400, "max_hp": 400, "atk": 60, "lv": 15, "exp": 150}
+    "幽暗森林": [
+        {"name": "森林狼", "hp": 300, "max_hp": 300, "atk": 50, "lv": 12, "exp": 120},
+        {"name": "獸人戰士", "hp": 500, "max_hp": 500, "atk": 75, "lv": 18, "exp": 200},
+        {"name": "食人花", "hp": 450, "max_hp": 450, "atk": 65, "lv": 15, "exp": 180}
+    ],
+    "巨龍巢穴": [
+        {"name": "幼龍", "hp": 1500, "max_hp": 1500, "atk": 180, "lv": 35, "exp": 800},
+        {"name": "龍人衛兵", "hp": 2200, "max_hp": 2200, "atk": 250, "lv": 45, "exp": 1200}
     ]
 }
 
-EQUIPMENT_DB = {
-    "武器": [
-        {"name": "新手木棒", "stat": 5, "desc": "好過冇嘅木棒"},
-        {"name": "精鋼長劍", "stat": 20, "desc": "鋒利嘅標準長劍"},
-        {"name": "龍之怒吼", "stat": 100, "desc": "傳說中嘅神器"}
-    ],
-    "頭盔": [
-        {"name": "布帽", "stat": 2, "desc": "保暖多過防禦"},
-        {"name": "騎士頭盔", "stat": 12, "desc": "重型金屬保護"}
-    ],
-    "盔甲": [
-        {"name": "破爛布衣", "stat": 3, "desc": "勉強遮體"},
-        {"name": "連身鎖子甲", "stat": 25, "desc": "非常耐用"}
-    ]
+REGIONAL_EQUIPMENT_DB = {
+    "新手村": {
+        "武器": [{"name": "新手木棒", "stat": 5, "desc": "好過冇嘅木棒"}],
+        "頭盔": [{"name": "布帽", "stat": 2, "desc": "保暖多過防禦"}],
+        "盔甲": [{"name": "破爛布衣", "stat": 3, "desc": "勉強遮體"}]
+    },
+    "幽暗森林": {
+        "武器": [{"name": "精鋼長劍", "stat": 25, "desc": "鋒利嘅標準長劍"}, {"name": "獵狼長弓", "stat": 30, "desc": "森林獵人嘅武器"}],
+        "頭盔": [{"name": "皮質頭盔", "stat": 10, "desc": "輕便且有一定防禦"}],
+        "盔甲": [{"name": "獵人皮甲", "stat": 18, "desc": "由狼皮製成"}]
+    },
+    "巨龍巢穴": {
+        "武器": [{"name": "龍之怒吼", "stat": 100, "desc": "傳說中嘅神器"}, {"name": "屠龍巨劍", "stat": 120, "desc": "為獵龍而生"}],
+        "頭盔": [{"name": "龍鱗頭盔", "stat": 45, "desc": "刀槍不入"}],
+        "盔甲": [{"name": "龍紋重甲", "stat": 80, "desc": "散發龍威嘅護甲"}]
+    }
 }
 
 DROP_POOL = {
-    "素材": [
+    "新手村": [
         {"name": "藥草", "type": "素材", "qty": 1, "desc": "用於合成"},
         {"name": "空瓶", "type": "素材", "qty": 1, "desc": "盛載液體"}
+    ],
+    "幽暗森林": [
+        {"name": "狼牙", "type": "素材", "qty": 1, "desc": "鋒利的素材"},
+        {"name": "魔力殘渣", "type": "素材", "qty": 1, "desc": "神秘的能量"}
+    ],
+    "巨龍巢穴": [
+        {"name": "龍鱗", "type": "素材", "qty": 1, "desc": "堅硬無比"},
+        {"name": "火龍晶石", "type": "素材", "qty": 1, "desc": "極高溫度的核心"}
     ]
 }
 
 CRAFT_RECIPES = [
-    {"name": "小型紅藥水", "mats": {"藥草": 2, "空瓶": 1}, "result": {"name": "小型紅藥水", "type": "藥物", "qty": 1, "effect": 80, "desc": "回復 80 HP"}}
+    {"name": "小型紅藥水", "mats": {"藥草": 2, "空瓶": 1}, "result": {"name": "小型紅藥水", "type": "藥物", "qty": 1, "effect": 80, "desc": "回復 80 HP"}},
+    {"name": "強效磨刀石", "mats": {"狼牙": 3, "魔力殘渣": 1}, "result": {"name": "強效磨刀石", "type": "素材", "qty": 1, "desc": "稀有合成材料"}}
 ]
 
+# --- 輔助函式 ---
 def draw_text(text, x, y, color=WHITE, use_title=False, target_surf=None):
     surf = target_surf if target_surf else SCREEN
     f = title_font if use_title else font
@@ -78,10 +97,8 @@ def draw_text(text, x, y, color=WHITE, use_title=False, target_surf=None):
     surf.blit(img, (x, y))
 
 def add_inv(inv, item):
-    # 確保物品有基本的 qty 屬性，RPG 邏輯中裝備通常不堆疊
     if "qty" not in item:
         item["qty"] = 1
-        
     if item["type"] in ["素材", "藥物", "卷軸"]:
         for i in inv:
             if i["name"] == item["name"]:
@@ -92,6 +109,14 @@ def add_inv(inv, item):
 def update_player_stats(player):
     player["atk"] = 45 + (player["equips"]["武器"]["stat"] if player["equips"]["武器"] else 0)
     player["def"] = 20 + sum(e["stat"] for k, e in player["equips"].items() if e and k != "武器")
+
+def reset_player(player, inventory):
+    player.update({
+        "lv": 1, "hp": 300, "max_hp": 300, 
+        "atk": 45, "def": 20, "exp": 0,
+        "equips": {"頭盔": None, "盔甲": None, "武器": None}
+    })
+    inventory.clear()
 
 def main():
     menu_width = 200
@@ -106,18 +131,21 @@ def main():
         "equips": {"頭盔": None, "盔甲": None, "武器": None}
     }
 
-    battle_logs = ["歡迎來到冒險世界！"]
+    battle_logs = ["歡迎來到冒險世界！請選擇戰鬥區域。"]
     inventory = []
     current_enemy = None
     search_result = None
     battle_ended = False
     is_ambush = False
     show_battle_potions = False
+    is_dead_status = False 
+    
+    regions = ["新手村", "幽暗森林", "巨龍巢穴"]
+    current_region = "新手村"
     
     scroll_y = 0
     item_height = 40
     clock = pygame.time.Clock()
-
     last_action_time = 0
     cooldown_ms = 200
 
@@ -144,6 +172,17 @@ def main():
         current_view = options[selected_index]
         content_x, content_y = 50, top_bar_height + 50
 
+        # --- 死亡判定邏輯 ---
+        if player["hp"] <= 0 and not is_dead_status:
+            is_dead_status = True
+            reset_player(player, inventory)
+            current_enemy = None
+            battle_ended = False
+            search_result = None
+            selected_index = 3 
+            battle_logs.append("你戰死了！所有物品已清空，已於城鎮重生。")
+
+        # --- 頁面切換邏輯 ---
         if current_view == "裝備":
             draw_text("背包中的裝備 (滑輪滾動)", content_x, content_y, GOLD, True)
             list_rect = pygame.Rect(content_x, content_y + 60, 350, 300)
@@ -244,7 +283,6 @@ def main():
                 draw_text(req_text, btn.x + 10, btn.y + 38, WHITE if can_craft else (150, 150, 150))
                 
                 if can_craft and mouse_click and can_click and btn.collidepoint(mouse_pos):
-                    # 扣除素材邏輯
                     for mat_name, req_qty in r["mats"].items():
                         count = req_qty
                         for item in inventory:
@@ -254,191 +292,241 @@ def main():
                                 count -= take
                                 if count <= 0: break
                     
-                    # 關鍵修正：只移除數量為 0 且擁有 qty 屬性的物品 (素材/藥水)，保留裝備
                     inventory[:] = [x for x in inventory if x.get("type") == "裝備" or x.get("qty", 0) > 0]
-                    
                     add_inv(inventory, r["result"])
                     battle_logs.append(f"成功合成 {r['name']}！")
                     last_action_time = current_time
 
         elif current_view == "回城":
             draw_text("城鎮廣場", content_x, content_y, GREEN, True)
-            draw_text("你正在城鎮中休息，體力已完全恢復。", content_x, content_y + 60)
-            player["hp"] = player["max_hp"]
+            if is_dead_status:
+                draw_text("醫護兵：睇你個樣就知你輸咗啦，所有嘢跌晒，下次小心啲！", content_x, content_y + 60, RED)
+                draw_text("（HP 已恢復，背包裝備已清空）", content_x, content_y + 100, WHITE)
+                if mouse_click and can_click:
+                    is_dead_status = False
+            else:
+                draw_text("你正在城鎮中休息，體力已完全恢復。", content_x, content_y + 60)
+                player["hp"] = player["max_hp"]
+            
+            current_enemy = None
+            battle_ended = False
             search_result = None
 
         elif current_view == "戰鬥":
-            if player["hp"] <= 0:
-                draw_text("你已經戰死，請前往回城重生。", content_x, content_y, RED, True)
-            else:
-                if current_enemy is None:
-                    search_btn = pygame.Rect(content_x, 200, 150, 50)
-                    fight_btn = pygame.Rect(content_x + 200, 200, 150, 50)
-                    pygame.draw.rect(SCREEN, WHITE, search_btn, 1)
-                    pygame.draw.rect(SCREEN, WHITE, fight_btn, 1)
-                    draw_text("執行搜索", search_btn.x + 35, search_btn.y + 12)
-                    draw_text("尋找敵人", fight_btn.x + 35, fight_btn.y + 12)
+            if current_enemy is None and not search_result:
+                draw_text(f"當前區域: {current_region}", content_x, content_y, BLUE, True)
+                for i, reg in enumerate(regions):
+                    reg_btn = pygame.Rect(content_x, content_y + 60 + i * 50, 150, 40)
+                    is_reg_hover = reg_btn.collidepoint(mouse_pos)
+                    pygame.draw.rect(SCREEN, GOLD if current_region == reg else WHITE, reg_btn, 1)
+                    draw_text(reg, reg_btn.x + 10, reg_btn.y + 8, GOLD if current_region == reg else WHITE)
+                    if mouse_click and can_click and is_reg_hover:
+                        current_region = reg
+                        last_action_time = current_time
 
-                    if mouse_click and can_click and not search_result:
-                        if search_btn.collidepoint(mouse_pos):
-                            if random.randint(1, 100) <= 70:
-                                search_result = random.choice(DROP_POOL["素材"]).copy()
-                                battle_logs.append(f"搜尋成功！發現咗 {search_result['name']}")
-                            else:
-                                current_enemy = {"name": "伏擊哥布林", "hp": 100, "max_hp": 100, "atk": 25, "lv": 3, "exp": 40}
-                                is_ambush, battle_ended, show_battle_potions = True, False, False
-                                battle_logs.append("遭伏擊！無法逃跑！")
-                            last_action_time = current_time
-                        elif fight_btn.collidepoint(mouse_pos):
-                            current_enemy = random.choice(MONSTER_DB["low"]).copy()
-                            is_ambush, battle_ended, show_battle_potions = False, False, False
-                            battle_logs.append(f"遭遇 {current_enemy['name']}！")
-                            last_action_time = current_time
+                # 搜尋與戰鬥按鈕
+                search_btn = pygame.Rect(content_x + 200, 200, 150, 50)
+                fight_btn = pygame.Rect(content_x + 400, 200, 150, 50)
+                pygame.draw.rect(SCREEN, WHITE, search_btn, 1)
+                pygame.draw.rect(SCREEN, WHITE, fight_btn, 1)
+                draw_text("執行搜索", search_btn.x + 35, search_btn.y + 12)
+                draw_text("尋找敵人", fight_btn.x + 35, fight_btn.y + 12)
 
-                    if search_result:
-                        draw_text(f"你發現咗：{search_result['name']}", content_x, 280, GOLD)
-                        c_btn = pygame.Rect(content_x, 320, 130, 45)
-                        k_btn = pygame.Rect(content_x + 150, 320, 130, 45)
-                        pygame.draw.rect(SCREEN, GREEN, c_btn, 1)
-                        pygame.draw.rect(SCREEN, WHITE, k_btn, 1)
-                        draw_text("確定收下", c_btn.x + 25, c_btn.y + 12, GREEN)
-                        draw_text("繼續探索", k_btn.x + 25, k_btn.y + 12)
-                        if mouse_click and can_click:
-                            if c_btn.collidepoint(mouse_pos):
-                                add_inv(inventory, search_result)
-                                battle_logs.append(f"已獲得 {search_result['name']}")
-                                search_result = None
-                                last_action_time = current_time
-                            elif k_btn.collidepoint(mouse_pos):
-                                battle_logs.append("你繼續前行...")
-                                search_result = None
-                                last_action_time = current_time
-                    
-                    for i, log in enumerate(battle_logs[-5:]):
-                        draw_text(log, content_x, 400 + i * 25, WHITE)
-
-                else:
-                    draw_text(f"敵方: {current_enemy['name']} HP: {current_enemy['hp']}/{current_enemy['max_hp']}", content_x, content_y, RED)
-                    for i, log in enumerate(battle_logs[-7:]):
-                        draw_text(log, content_x, content_y + 80 + i * 25, GOLD if "獲" in log or "升" in log else WHITE)
-
-                    if not battle_ended:
-                        if not show_battle_potions:
-                            atk_btn = pygame.Rect(content_x, 480, 100, 45)
-                            pot_btn = pygame.Rect(content_x + 120, 480, 100, 45)
-                            run_btn = pygame.Rect(content_x + 240, 480, 100, 45)
-                            pygame.draw.rect(SCREEN, WHITE, atk_btn, 1)
-                            pygame.draw.rect(SCREEN, WHITE, pot_btn, 1)
-                            pygame.draw.rect(SCREEN, GRAY if is_ambush else WHITE, run_btn, 1)
-                            draw_text("攻擊", atk_btn.x + 30, atk_btn.y + 12)
-                            draw_text("藥水", pot_btn.x + 30, pot_btn.y + 12)
-                            draw_text("逃跑", run_btn.x + 30, run_btn.y + 12, GRAY if is_ambush else WHITE)
-
-                            if mouse_click and can_click:
-                                enemy_turn = False
-                                if atk_btn.collidepoint(mouse_pos):
-                                    dmg = max(1, player["atk"] + random.randint(-5, 5))
-                                    current_enemy["hp"] -= dmg
-                                    battle_logs.append(f"你對 {current_enemy['name']} 造成 {dmg} 傷害")
-                                    enemy_turn = True
-                                    last_action_time = current_time
-                                elif pot_btn.collidepoint(mouse_pos):
-                                    show_battle_potions = True
-                                    last_action_time = current_time
-                                elif run_btn.collidepoint(mouse_pos) and not is_ambush:
-                                    battle_logs.append("逃跑成功！")
-                                    current_enemy = None
-                                    last_action_time = current_time
-                                
-                                if enemy_turn:
-                                    if current_enemy["hp"] <= 0:
-                                        battle_logs.append(f"擊敗怪物！獲得 {current_enemy['exp']} EXP")
-                                        player["exp"] += current_enemy["exp"]
-                                        # 掉落邏輯
-                                        roll = random.randint(1, 100)
-                                        it = None
-                                        if roll <= 15:
-                                            it = random.choice(EQUIPMENT_DB["武器"]).copy()
-                                            it.update({"type": "裝備", "sub_type": "武器"})
-                                        elif roll <= 40:
-                                            slot = random.choice(["頭盔", "盔甲"])
-                                            it = random.choice(EQUIPMENT_DB[slot]).copy()
-                                            it.update({"type": "裝備", "sub_type": slot})
-                                        else:
-                                            it = random.choice(DROP_POOL["素材"]).copy()
-                                        
-                                        add_inv(inventory, it)
-                                        battle_logs.append(f"掉落物：{it['name']}")
-                                        # 升級邏輯
-                                        if player["exp"] >= player["lv"] * 50:
-                                            player["exp"] -= player["lv"] * 50
-                                            player["lv"] += 1
-                                            player["max_hp"] += 10
-                                            player["atk"] += 1
-                                            player["hp"] = player["max_hp"] // 10
-                                            battle_logs.append("等級提升！HP 已全滿！")
-                                        battle_ended = True
-                                    else:
-                                        edmg = max(1, current_enemy["atk"] - player["def"] // 2)
-                                        player["hp"] -= edmg
-                                        battle_logs.append(f"{current_enemy['name']} 反擊造成 {edmg} 傷害")
-
+                if mouse_click and can_click: #探索
+                    if search_btn.collidepoint(mouse_pos):
+                        if random.randint(1, 100) <= 90:
+                            search_result = random.choice(DROP_POOL[current_region]).copy()
+                            battle_logs.append(f"搜尋成功！在 {current_region} 發現咗 {search_result['name']}")
                         else:
-                            potions_in_inv = [i for i in inventory if i["type"] == "藥物"]
-                            draw_text("選擇藥水 (使用後失去本回合)", content_x, 430, GREEN)
-                            back_btn = pygame.Rect(content_x + 350, 480, 80, 35)
-                            pygame.draw.rect(SCREEN, RED, back_btn, 1)
-                            draw_text("返回", back_btn.x + 20, back_btn.y + 5, RED)
+                            # 修改後的伏擊邏輯：隨機抽取地區怪物並增強 1.2 倍
+                            base_monster = random.choice(MONSTER_DB[current_region]).copy()
+                            current_enemy = {
+                                "name": f"伏擊嘅{base_monster['name']}", 
+                                "hp": int(base_monster['hp'] * 1.2), 
+                                "max_hp": int(base_monster['hp'] * 1.2), 
+                                "atk": int(base_monster['atk'] * 1.2), 
+                                "lv": base_monster['lv'], 
+                                "exp": int(base_monster['exp'] * 1.5) # 伏擊怪 EXP 亦較高
+                            }
+                            is_ambush, battle_ended, show_battle_potions = True, False, False
+                            battle_logs.append(f"遭伏擊！{current_enemy['name']} 出現了！無法逃跑！")
+                        last_action_time = current_time
+                    elif fight_btn.collidepoint(mouse_pos):
+                        current_enemy = random.choice(MONSTER_DB[current_region]).copy()
+                        is_ambush, battle_ended, show_battle_potions = False, False, False
+                        battle_logs.append(f"喺 {current_region} 遭遇 {current_enemy['name']}！")
+                        last_action_time = current_time
 
-                            for i, item in enumerate(potions_in_inv[:3]):
-                                p_btn = pygame.Rect(content_x, 460 + i * 40, 300, 35)
-                                is_p_hover = p_btn.collidepoint(mouse_pos)
-                                pygame.draw.rect(SCREEN, WHITE if not is_p_hover else GREEN, p_btn, 1)
-                                draw_text(f"{item['name']} (x{item['qty']})", p_btn.x + 10, p_btn.y + 5)
-                                
-                                if mouse_click and can_click and is_p_hover:
-                                    player["hp"] = min(player["max_hp"], player["hp"] + item["effect"])
-                                    item["qty"] -= 1
-                                    if item["qty"] <= 0: inventory.remove(item)
-                                    battle_logs.append(f"使用 {item['name']}，跳過回合！")
-                                    edmg = max(1, current_enemy["atk"] - player["def"] // 2)
-                                    player["hp"] -= edmg
-                                    battle_logs.append(f"{current_enemy['name']} 趁機攻擊造成 {edmg} 傷害")
-                                    show_battle_potions = False
-                                    last_action_time = current_time
-                                    break
-                            
-                            if mouse_click and can_click and back_btn.collidepoint(mouse_pos):
-                                show_battle_potions = False
-                                last_action_time = current_time
-                    else:
-                        cont_btn = pygame.Rect(content_x, 480, 130, 45)
-                        leave_btn = pygame.Rect(content_x + 150, 480, 130, 45)
-                        pygame.draw.rect(SCREEN, GOLD, cont_btn, 1)
-                        pygame.draw.rect(SCREEN, WHITE, leave_btn, 1)
-                        draw_text("繼續戰鬥", cont_btn.x + 20, cont_btn.y + 12, GOLD)
-                        draw_text("離開", leave_btn.x + 40, leave_btn.y + 12)
+            elif search_result: #探索
+                # 顯示搜尋結果與「繼續探索」邏輯
+                draw_text(f"你發現咗：{search_result['name']}", content_x + 200, 280, GOLD)
+                c_btn = pygame.Rect(content_x + 200, 320, 130, 45)
+                k_btn = pygame.Rect(content_x + 350, 320, 130, 45)
+                pygame.draw.rect(SCREEN, GREEN, c_btn, 1)
+                pygame.draw.rect(SCREEN, WHITE, k_btn, 1)
+                draw_text("確定收下", c_btn.x + 25, c_btn.y + 12, GREEN)
+                draw_text("繼續探索", k_btn.x + 25, k_btn.y + 12)
+                
+                if mouse_click and can_click:
+                    if c_btn.collidepoint(mouse_pos):
+                        add_inv(inventory, search_result)
+                        battle_logs.append(f"已獲得 {search_result['name']}")
+                        search_result = None
+                        last_action_time = current_time
+                    elif k_btn.collidepoint(mouse_pos):
+                        battle_logs.append("你繼續前行並再次搜尋...")
+                        search_result = None # 先清空再重新隨機
+                        if random.randint(1, 100) <= 90:
+                            search_result = random.choice(DROP_POOL[current_region]).copy()
+                            battle_logs.append(f"搜尋成功！在 {current_region} 發現咗 {search_result['name']}")
+                        else:
+                            base_monster = random.choice(MONSTER_DB[current_region]).copy()
+                            current_enemy = {
+                                "name": f"伏擊嘅{base_monster['name']}", 
+                                "hp": int(base_monster['hp'] * 1.2), 
+                                "max_hp": int(base_monster['hp'] * 1.2), 
+                                "atk": int(base_monster['atk'] * 1.2), 
+                                "lv": base_monster['lv'], 
+                                "exp": int(base_monster['exp'] * 1.5)
+                            }
+                            is_ambush, battle_ended, show_battle_potions = True, False, False
+                            battle_logs.append(f"遭伏擊！{current_enemy['name']} 出現了！無法逃跑！")
+                        last_action_time = current_time
+
+            else:
+                # 戰鬥畫面
+                draw_text(f"區域: {current_region} | 敵方: {current_enemy['name']} HP: {current_enemy['hp']}/{current_enemy['max_hp']}", content_x, content_y, RED)
+                for i, log in enumerate(battle_logs[-7:]):
+                    draw_text(log, content_x, content_y + 80 + i * 25, GOLD if "獲" in log or "升" in log else WHITE)
+
+                if not battle_ended:
+                    if not show_battle_potions:
+                        atk_btn = pygame.Rect(content_x, 480, 100, 45)
+                        pot_btn = pygame.Rect(content_x + 120, 480, 100, 45)
+                        run_btn = pygame.Rect(content_x + 240, 480, 100, 45)
+                        pygame.draw.rect(SCREEN, WHITE, atk_btn, 1)
+                        pygame.draw.rect(SCREEN, WHITE, pot_btn, 1)
+                        pygame.draw.rect(SCREEN, GRAY if is_ambush else WHITE, run_btn, 1)
+                        draw_text("攻擊", atk_btn.x + 30, atk_btn.y + 12)
+                        draw_text("藥水", pot_btn.x + 30, pot_btn.y + 12)
+                        draw_text("逃跑", run_btn.x + 30, run_btn.y + 12, GRAY if is_ambush else WHITE)
+
                         if mouse_click and can_click:
-                            if cont_btn.collidepoint(mouse_pos):
-                                current_enemy = random.choice(MONSTER_DB["low"]).copy()
-                                battle_ended, show_battle_potions = False, False
+                            enemy_turn = False
+                            if atk_btn.collidepoint(mouse_pos):
+                                dmg = max(1, player["atk"] + random.randint(-5, 5))
+                                current_enemy["hp"] -= dmg
+                                battle_logs.append(f"你對 {current_enemy['name']} 造成 {dmg} 傷害")
+                                enemy_turn = True
                                 last_action_time = current_time
-                            elif leave_btn.collidepoint(mouse_pos):
+                            elif pot_btn.collidepoint(mouse_pos):
+                                show_battle_potions = True
+                                last_action_time = current_time
+                            elif run_btn.collidepoint(mouse_pos) and not is_ambush:
+                                battle_logs.append("逃跑成功！")
                                 current_enemy = None
                                 last_action_time = current_time
+                            
+                            if enemy_turn and current_enemy:
+                                if current_enemy["hp"] <= 0:
+                                    battle_logs.append(f"擊敗怪物！獲得 {current_enemy['exp']} EXP")
+                                    player["exp"] += current_enemy["exp"]
+                                    
+                                    roll = random.randint(1, 100)
+                                    regional_pool = REGIONAL_EQUIPMENT_DB[current_region]
+                                    if roll <= 15:
+                                        it = random.choice(regional_pool["武器"]).copy()
+                                        it.update({"type": "裝備", "sub_type": "武器"})
+                                    elif roll <= 40:
+                                        slot = random.choice(["頭盔", "盔甲"])
+                                        it = random.choice(regional_pool[slot]).copy()
+                                        it.update({"type": "裝備", "sub_type": slot})
+                                    else:
+                                        it = random.choice(DROP_POOL[current_region]).copy()
+                                    
+                                    add_inv(inventory, it)
+                                    battle_logs.append(f"掉落物：{it['name']}")
+                                    
+                                    if player["exp"] >= player["lv"] * 50:
+                                        player["exp"] -= player["lv"] * 50
+                                        player["lv"] += 1
+                                        player["max_hp"] += 10
+                                        player["atk"] += 1
+                                        player["hp"] = player["max_hp"]
+                                        battle_logs.append("等級提升！HP 已全滿！")
+                                    battle_ended = True
+                                else:
+                                    edmg = max(1, current_enemy["atk"] - player["def"] // 2)
+                                    player["hp"] -= edmg
+                                    battle_logs.append(f"{current_enemy['name']} 反擊造成 {edmg} 傷害")
+
+                    else:
+                        potions_in_inv = [i for i in inventory if i["type"] == "藥物"]
+                        draw_text("選擇藥水 (使用後失去本回合)", content_x, 430, GREEN)
+                        back_btn = pygame.Rect(content_x + 350, 480, 80, 35)
+                        pygame.draw.rect(SCREEN, RED, back_btn, 1)
+                        draw_text("返回", back_btn.x + 20, back_btn.y + 5, RED)
+
+                        for i, item in enumerate(potions_in_inv[:3]):
+                            p_btn = pygame.Rect(content_x, 460 + i * 40, 300, 35)
+                            is_p_hover = p_btn.collidepoint(mouse_pos)
+                            pygame.draw.rect(SCREEN, WHITE if not is_p_hover else GREEN, p_btn, 1)
+                            draw_text(f"{item['name']} (x{item['qty']})", p_btn.x + 10, p_btn.y + 5)
+                            
+                            if mouse_click and can_click and is_p_hover:
+                                player["hp"] = min(player["max_hp"], player["hp"] + item["effect"])
+                                item["qty"] -= 1
+                                if item["qty"] <= 0: inventory.remove(item)
+                                battle_logs.append(f"使用 {item['name']}，跳過回合！")
+                                edmg = max(1, current_enemy["atk"] - player["def"] // 2)
+                                player["hp"] -= edmg
+                                battle_logs.append(f"{current_enemy['name']} 趁機攻擊造成 {edmg} 傷害")
+                                show_battle_potions = False
+                                last_action_time = current_time
+                                break
+                        
+                        if mouse_click and can_click and back_btn.collidepoint(mouse_pos):
+                            show_battle_potions = False
+                            last_action_time = current_time
+                else:
+                    cont_btn = pygame.Rect(content_x, 480, 130, 45)
+                    leave_btn = pygame.Rect(content_x + 150, 480, 130, 45)
+                    pygame.draw.rect(SCREEN, GOLD, cont_btn, 1)
+                    pygame.draw.rect(SCREEN, WHITE, leave_btn, 1)
+                    draw_text("繼續戰鬥", cont_btn.x + 20, cont_btn.y + 12, GOLD)
+                    draw_text("離開", leave_btn.x + 40, leave_btn.y + 12)
+                    if mouse_click and can_click:
+                        if cont_btn.collidepoint(mouse_pos):
+                            current_enemy = random.choice(MONSTER_DB[current_region]).copy()
+                            battle_ended, show_battle_potions = False, False
+                            last_action_time = current_time
+                        elif leave_btn.collidepoint(mouse_pos):
+                            current_enemy = None
+                            last_action_time = current_time
+
+            # 顯示最近 5 條 Log (僅限搜尋階段)
+            if current_enemy is None:
+                for i, log in enumerate(battle_logs[-5:]):
+                    draw_text(log, content_x + 200, 400 + i * 25, WHITE)
 
         # 3. 右側選單
         pygame.draw.rect(SCREEN, GRAY, (menu_x, top_bar_height, menu_width, HEIGHT - top_bar_height))
         for i, opt in enumerate(options):
             btn = pygame.Rect(menu_x + 10, top_bar_height + 30 + i * 70, menu_width - 20, 55)
             is_hover = btn.collidepoint(mouse_pos)
+            can_switch = not is_dead_status or opt == "回城"
+            
             if is_hover:
-                pygame.draw.rect(SCREEN, HIGHLIGHT, btn)
-                if mouse_click and can_click and not (current_view == "戰鬥" and current_enemy and not battle_ended):
-                    selected_index = i
-                    scroll_y = 0
-                    last_action_time = current_time
-            color = GOLD if selected_index == i else WHITE
+                if can_switch:
+                    pygame.draw.rect(SCREEN, HIGHLIGHT, btn)
+                    if mouse_click and can_click and not (current_view == "戰鬥" and current_enemy and not battle_ended):
+                        selected_index = i
+                        scroll_y = 0
+                        last_action_time = current_time
+                else:
+                    pygame.draw.rect(SCREEN, RED, btn, 1) 
+
+            color = GOLD if selected_index == i else (WHITE if can_switch else GRAY)
             pygame.draw.rect(SCREEN, color, btn, 1)
             t_surface = font.render(opt, True, color)
             SCREEN.blit(t_surface, t_surface.get_rect(center=btn.center))
