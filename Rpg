@@ -41,9 +41,9 @@ MONSTER_DB = {
         {"name": "哥布林", "hp": 120, "max_hp": 120, "atk": 25, "lv": 5, "exp": 50}
     ],
     "幽暗森林": [
-        {"name": "森林狼", "hp": 300, "max_hp": 300, "atk": 50, "lv": 12, "exp": 120},
-        {"name": "獸人戰士", "hp": 500, "max_hp": 500, "atk": 75, "lv": 18, "exp": 200},
-        {"name": "食人花", "hp": 450, "max_hp": 450, "atk": 65, "lv": 15, "exp": 180}
+        {"name": "森林狼", "hp": 100, "max_hp": 100, "atk": 40, "lv": 12, "exp": 120},
+        {"name": "獸人戰士", "hp": 500, "max_hp":500, "atk": 50, "lv": 20, "exp": 200},
+        {"name": "食人花", "hp": 150, "max_hp": 150, "atk": 100, "lv": 15, "exp": 180}
     ],
     "巨龍巢穴": [
         {"name": "幼龍", "hp": 1500, "max_hp": 1500, "atk": 180, "lv": 35, "exp": 800},
@@ -55,17 +55,20 @@ REGIONAL_EQUIPMENT_DB = {
     "新手村": {
         "武器": [{"name": "新手木棒", "stat": 5, "desc": "好過冇嘅木棒"}],
         "頭盔": [{"name": "布帽", "stat": 2, "desc": "保暖多過防禦"}],
-        "盔甲": [{"name": "破爛布衣", "stat": 3, "desc": "勉強遮體"}]
+        "盔甲": [{"name": "破爛布衣", "stat": 3, "desc": "勉強遮體"}],
+        "飾品":[{"name": "吊墜", "stat": 20, "desc": "勉強遮體"}]
     },
     "幽暗森林": {
         "武器": [{"name": "精鋼長劍", "stat": 25, "desc": "鋒利嘅標準長劍"}, {"name": "獵狼長弓", "stat": 30, "desc": "森林獵人嘅武器"}],
         "頭盔": [{"name": "皮質頭盔", "stat": 10, "desc": "輕便且有一定防禦"}],
-        "盔甲": [{"name": "獵人皮甲", "stat": 18, "desc": "由狼皮製成"}]
+        "盔甲": [{"name": "獵人皮甲", "stat": 18, "desc": "由狼皮製成"}],
+        "飾品":[{}]
     },
     "巨龍巢穴": {
         "武器": [{"name": "龍之怒吼", "stat": 100, "desc": "傳說中嘅神器"}, {"name": "屠龍巨劍", "stat": 120, "desc": "為獵龍而生"}],
         "頭盔": [{"name": "龍鱗頭盔", "stat": 45, "desc": "刀槍不入"}],
-        "盔甲": [{"name": "龍紋重甲", "stat": 80, "desc": "散發龍威嘅護甲"}]
+        "盔甲": [{"name": "龍紋重甲", "stat": 80, "desc": "散發龍威嘅護甲"}],        
+        "飾品":[{}]
     }
 }
 
@@ -107,15 +110,14 @@ def add_inv(inv, item):
     inv.append(item.copy())
 
 def update_player_stats(player):
-    player["atk"] = 45 + (player["equips"]["武器"]["stat"] if player["equips"]["武器"] else 0)
+    player["atk"] = 45 + (player["equips"]["武器"]["stat"] if player["equips"]["武器"] else 0) + (player["equips"]["飾品"]["stat"] if player["equips"]["飾品"] else 0) 
     player["def"] = 20 + sum(e["stat"] for k, e in player["equips"].items() if e and k != "武器")
 
 def reset_player(player, inventory):
     player.update({
         "lv": 1, "hp": 300, "max_hp": 300, 
         "atk": 45, "def": 20, "exp": 0,
-        "equips": {"頭盔": None, "盔甲": None, "武器": None}
-    })
+        "equips": {"頭盔": None, "盔甲": None, "武器": None,"飾品":None}})
     inventory.clear()
 
 def main():
@@ -128,7 +130,7 @@ def main():
     player = {
         "lv": 1, "hp": 300, "max_hp": 300, 
         "atk": 45, "def": 20, "exp": 0,
-        "equips": {"頭盔": None, "盔甲": None, "武器": None}
+        "equips": {"頭盔": None, "盔甲": None, "武器": None,"飾品":None}
     }
 
     battle_logs = ["歡迎來到冒險世界！請選擇戰鬥區域。"]
@@ -256,11 +258,21 @@ def main():
             SCREEN.blit(scroll_surf, list_rect, (0, scroll_y, list_rect.width, list_rect.height))
 
         elif current_view == "合成":
-            draw_text("素材庫存", content_x, content_y, GOLD, True)
+            # 左側素材庫存 (加入滾動)
+            draw_text("素材庫存 (滑輪滾動)", content_x, content_y, GOLD, True)
+            list_rect = pygame.Rect(content_x, content_y + 60, 300, 350)
+            pygame.draw.rect(SCREEN, GRAY, list_rect, 1)
+            
             mats_in_inv = [i for i in inventory if i["type"] == "素材"]
-            for i, item in enumerate(mats_in_inv):
-                draw_text(f"{item['name']} x{item['qty']}", content_x + 10, content_y + 60 + i * 35)
+            content_height = max(len(mats_in_inv) * 35, list_rect.height)
+            scroll_surf = pygame.Surface((list_rect.width, content_height))
+            scroll_surf.fill(BLACK)
 
+            for i, item in enumerate(mats_in_inv):
+                draw_text(f"{item['name']} x{item['qty']}", 10, i * 35, WHITE, False, scroll_surf)
+            SCREEN.blit(scroll_surf, list_rect, (0, scroll_y, list_rect.width, list_rect.height))
+
+            # 右側合成配方
             draw_text("合成配方", content_x + 350, content_y, GOLD, True)
             for i, r in enumerate(CRAFT_RECIPES):
                 can_craft = True
@@ -283,6 +295,7 @@ def main():
                 draw_text(req_text, btn.x + 10, btn.y + 38, WHITE if can_craft else (150, 150, 150))
                 
                 if can_craft and mouse_click and can_click and btn.collidepoint(mouse_pos):
+                    # 扣除素材邏輯
                     for mat_name, req_qty in r["mats"].items():
                         count = req_qty
                         for item in inventory:
@@ -292,6 +305,7 @@ def main():
                                 count -= take
                                 if count <= 0: break
                     
+                    # 清理數量為 0 的素材
                     inventory[:] = [x for x in inventory if x.get("type") == "裝備" or x.get("qty", 0) > 0]
                     add_inv(inventory, r["result"])
                     battle_logs.append(f"成功合成 {r['name']}！")
@@ -338,7 +352,6 @@ def main():
                             search_result = random.choice(DROP_POOL[current_region]).copy()
                             battle_logs.append(f"搜尋成功！在 {current_region} 發現咗 {search_result['name']}")
                         else:
-                            # 修改後的伏擊邏輯：隨機抽取地區怪物並增強 1.2 倍
                             base_monster = random.choice(MONSTER_DB[current_region]).copy()
                             current_enemy = {
                                 "name": f"伏擊嘅{base_monster['name']}", 
@@ -346,7 +359,7 @@ def main():
                                 "max_hp": int(base_monster['hp'] * 1.2), 
                                 "atk": int(base_monster['atk'] * 1.2), 
                                 "lv": base_monster['lv'], 
-                                "exp": int(base_monster['exp'] * 1.5) # 伏擊怪 EXP 亦較高
+                                "exp": int(base_monster['exp'] * 1.5)
                             }
                             is_ambush, battle_ended, show_battle_potions = True, False, False
                             battle_logs.append(f"遭伏擊！{current_enemy['name']} 出現了！無法逃跑！")
@@ -357,8 +370,7 @@ def main():
                         battle_logs.append(f"喺 {current_region} 遭遇 {current_enemy['name']}！")
                         last_action_time = current_time
 
-            elif search_result: #探索
-                # 顯示搜尋結果與「繼續探索」邏輯
+            elif search_result: #探索中
                 draw_text(f"你發現咗：{search_result['name']}", content_x + 200, 280, GOLD)
                 c_btn = pygame.Rect(content_x + 200, 320, 130, 45)
                 k_btn = pygame.Rect(content_x + 350, 320, 130, 45)
@@ -375,7 +387,7 @@ def main():
                         last_action_time = current_time
                     elif k_btn.collidepoint(mouse_pos):
                         battle_logs.append("你繼續前行並再次搜尋...")
-                        search_result = None # 先清空再重新隨機
+                        search_result = None
                         if random.randint(1, 100) <= 90:
                             search_result = random.choice(DROP_POOL[current_region]).copy()
                             battle_logs.append(f"搜尋成功！在 {current_region} 發現咗 {search_result['name']}")
@@ -434,7 +446,10 @@ def main():
                                     
                                     roll = random.randint(1, 100)
                                     regional_pool = REGIONAL_EQUIPMENT_DB[current_region]
-                                    if roll <= 15:
+                                    if roll<=5:
+                                        it = random.choice(regional_pool["飾品"]).copy()
+                                        it.update({"type": "裝備", "sub_type": "飾品"})
+                                    elif roll <= 15:
                                         it = random.choice(regional_pool["武器"]).copy()
                                         it.update({"type": "裝備", "sub_type": "武器"})
                                     elif roll <= 40:
@@ -504,7 +519,6 @@ def main():
                             current_enemy = None
                             last_action_time = current_time
 
-            # 顯示最近 5 條 Log (僅限搜尋階段)
             if current_enemy is None:
                 for i, log in enumerate(battle_logs[-5:]):
                     draw_text(log, content_x + 200, 400 + i * 25, WHITE)
@@ -541,6 +555,7 @@ def main():
                     max_scroll = 0
                     if current_view == "裝備": max_scroll = max(0, len([i for i in inventory if i["type"] == "裝備"]) * item_height - 300)
                     elif current_view == "藥水": max_scroll = max(0, len([i for i in inventory if i["type"] == "藥物"]) * item_height - 350)
+                    elif current_view == "合成": max_scroll = max(0, len([i for i in inventory if i["type"] == "素材"]) * 35 - 350)
                     scroll_y = min(scroll_y + 20, max_scroll)
 
         pygame.display.flip()
