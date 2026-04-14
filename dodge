@@ -1,0 +1,174 @@
+import pygame
+import sys
+import random
+
+# 初始化
+pygame.init()
+
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+pygame.display.set_caption("Rainbow Bullet Survival - Database & Bounce Edition")
+
+# 顏色定義
+C_RED, C_GREEN, C_BLUE = (255, 0, 0), (0, 255, 0), (0, 0, 255)
+C_PINK, C_WHITE, C_BLACK = (255, 192, 203), (255, 255, 255), (0, 0, 0)
+C_YELLOW, C_CYAN, C_PURPLE, C_ORANGE = (255, 255, 0), (0, 255, 255), (128, 0, 128), (255, 165, 0)
+
+# --- 子彈資料庫 ---
+# 格式: "種類名稱": (顏色, 傷害, 大細, 速度範圍, 特殊效果類型)
+BULLET_TYPES = {
+    "red":    (C_RED, 30, 22, (8.0, 12.0), "heavy"),
+    "orange": (C_ORANGE, 15, 12, (10.0, 15.0), "fast"),
+    "blue":   (C_BLUE, 5, 10, (3.0, 6.0), "ice"),
+    "green":  (C_GREEN, 12, 14, (5.0, 9.0), "normal"),
+    "cyan":   (C_CYAN, 8, 8, (7.0, 11.0), "tiny"),
+    "purple": (C_PURPLE, 20, 16, (4.0, 7.0), "heavy"),
+    "yellow": (C_YELLOW, 10, 12, (4.0, 8.0), "normal")
+}
+
+font_small = pygame.font.SysFont("Arial", 22)
+font_large = pygame.font.SysFont("Arial", 50)
+
+class MedKit:
+    def __init__(self, w, h):
+        self.size = 20
+        self.x, self.y = random.randint(50, w-50), random.randint(50, h-50)
+        self.rect = pygame.Rect(self.x, self.y, self.size, self.size)
+        self.heal_amount, self.lifetime = 25, 400
+
+    def draw(self, surface):
+        pygame.draw.rect(surface, C_PINK, self.rect)
+        pygame.draw.line(surface, C_WHITE, (self.rect.centerx, self.rect.top+2), (self.rect.centerx, self.rect.bottom-2), 3)
+        pygame.draw.line(surface, C_WHITE, (self.rect.left+2, self.rect.centery), (self.rect.right-2, self.rect.centery), 3)
+
+class Bullet:
+    def __init__(self, score, w, h):
+        # 從資料庫隨機抽取一種
+        b_type = random.choice(list(BULLET_TYPES.keys()))
+        data = BULLET_TYPES[b_type]
+        
+        self.color, self.damage, self.size = data[0], data[1], data[2]
+        self.type_effect = data[4]
+        self.base_speed = random.uniform(data[3][0], data[3][1])
+        self.speed = self.base_speed + (score // 100)
+
+        # 反彈邏輯：每 1000 分加一次反彈次數
+        self.bounces_left = score // 1000
+
+        # 生成位置與向量
+        side = random.randint(0, 3)
+        if side == 0: self.x, self.y, self.vx, self.vy = random.randint(0, w), -20, random.uniform(-1, 1), 1
+        elif side == 1: self.x, self.y, self.vx, self.vy = random.randint(0, w), h + 20, random.uniform(-1, 1), -1
+        elif side == 2: self.x, self.y, self.vx, self.vy = -20, random.randint(0, h), 1, random.uniform(-1, 1)
+        else: self.x, self.y, self.vx, self.vy = w + 20, random.randint(0, h), -1, random.uniform(-1, 1)
+
+        self.rect = pygame.Rect(self.x, self.y, self.size, self.size)
+
+    def update(self, w, h):
+        self.x += self.vx * self.speed
+        self.y += self.vy * self.speed
+        self.rect.x, self.rect.y = self.x, self.y
+
+        # 反彈偵測：觸碰邊緣時反射
+        if self.bounces_left > 0:
+            if self.x <= 0 or self.x >= w - self.size:
+                self.vx *= -1
+                self.bounces_left -= 1
+            if self.y <= 0 or self.y >= h - self.size:
+                self.vy *= -1
+                self.bounces_left -= 1
+
+    def on_collide(self, g):
+        """觸碰時觸發效果"""
+        g["hp"] -= self.damage
+        if self.type_effect == "ice":
+            g["slow_timer"] = 120
+
+    def draw(self, surface):
+        pygame.draw.rect(surface, self.color, self.rect)
+
+def reset_game(w, h):
+    return {
+        "player_rect": pygame.Rect(w // 2, h // 2, 5, 5),
+        "hp": 100, "score": 0, "bullets": [], "medkits": [],
+        "spawn_timer": 0, "med_timer": 0, "slow_timer": 0, "game_active": True
+    }
+
+def main():
+    global SCREEN_WIDTH, SCREEN_HEIGHT, screen
+    clock = pygame.time.Clock()
+    g = reset_game(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+    while True:
+        screen.fill(C_BLACK)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: pygame.quit(); sys.exit()
+            if event.type == pygame.VIDEORESIZE:
+                SCREEN_WIDTH, SCREEN_HEIGHT = event.w, event.h
+                screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+                g = reset_game(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+        if g["game_active"]:
+            move_speed = 3 if g["slow_timer"] > 0 else 6
+            if g["slow_timer"] > 0: g["slow_timer"] -= 1
+            
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT] and g["player_rect"].left > 0: g["player_rect"].x -= move_speed
+            if keys[pygame.K_RIGHT] and g["player_rect"].right < SCREEN_WIDTH: g["player_rect"].x += move_speed
+            if keys[pygame.K_UP] and g["player_rect"].top > 0: g["player_rect"].y -= move_speed
+            if keys[pygame.K_DOWN] and g["player_rect"].bottom < SCREEN_HEIGHT: g["player_rect"].y += move_speed
+
+            g["spawn_timer"] += 1
+            if g["spawn_timer"] > max(2, 10 - (g["score"] // 100)):
+                g["bullets"].append(Bullet(g["score"], SCREEN_WIDTH, SCREEN_HEIGHT))
+                g["spawn_timer"] = 0
+            
+            g["med_timer"] += 1
+            if g["med_timer"] > 600 and len(g["medkits"]) < 1:
+                g["medkits"].append(MedKit(SCREEN_WIDTH, SCREEN_HEIGHT))
+                g["med_timer"] = 0
+
+            # 處理子彈
+            for b in g["bullets"][:]:
+                b.update(SCREEN_WIDTH, SCREEN_HEIGHT)
+                b.draw(screen)
+                if g["player_rect"].colliderect(b.rect):
+                    b.on_collide(g) # 觸發資料庫效果
+                    g["bullets"].remove(b)
+                elif b.x < -300 or b.x > SCREEN_WIDTH + 300 or b.y < -300 or b.y > SCREEN_HEIGHT + 300:
+                    if b in g["bullets"]: g["bullets"].remove(b)
+                    g["score"] += 1
+
+            # 處理補血塊
+            for m in g["medkits"][:]:
+                m.draw(screen)
+                m.lifetime -= 1
+                if g["player_rect"].colliderect(m.rect):
+                    g["hp"] = min(100, g["hp"] + m.heal_amount)
+                    g["medkits"].remove(m)
+                elif m.lifetime <= 0: g["medkits"].remove(m)
+
+            if g["hp"] <= 0: g["hp"] = 0; g["game_active"] = False
+
+            # 玩家與 UI
+            p_color = C_CYAN if g["slow_timer"] > 0 else C_WHITE
+            pygame.draw.rect(screen, p_color, g["player_rect"])
+            pygame.draw.rect(screen, C_RED, (20, 20, 200, 20), 2)
+            pygame.draw.rect(screen, C_GREEN if g["hp"] > 30 else C_RED, (20, 20, g["hp"] * 2, 20))
+            screen.blit(font_small.render(f"Score: {g['score']} | HP: {int(g['hp'])} | Bounce Lv: {g['score']//1000}", True, C_WHITE), (20, 50))
+        
+        else:
+            msg = font_large.render("GAME OVER", True, C_RED)
+            score_final = font_small.render(f"Final Score: {g['score']}", True, C_WHITE)
+            retry = font_small.render("Press 'R' to Restart", True, C_GREEN)
+            screen.blit(msg, (SCREEN_WIDTH // 2 - 120, SCREEN_HEIGHT // 2 - 50))
+            screen.blit(score_final, (SCREEN_WIDTH // 2 - 60, SCREEN_HEIGHT // 2 + 10))
+            screen.blit(retry, (SCREEN_WIDTH // 2 - 80, SCREEN_HEIGHT // 2 + 50))
+
+        pygame.display.flip()
+        clock.tick(60)
+
+if __name__ == "__main__":
+    main()
